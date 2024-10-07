@@ -9,7 +9,16 @@ const clearBtn = document.getElementById("clear");
 
 // Function to add items to shopping list
 
-function addItem(content) {
+function displayItems() {
+  const items = getItemsFromStorage();
+
+  items.forEach((item) => {
+    addItemToDOM(item);
+  });
+  checkUI();
+}
+
+function addItemToDOM(content) {
   const itemList = document.getElementById("item-list");
 
   const item = document.createElement("li");
@@ -31,13 +40,53 @@ function addItem(content) {
   checkUI();
 }
 
-function deleteItem(e) {
-  if (e.target.parentElement.classList.contains("remove-item")) {
-    if (confirm("Are You Sure?")) {
-      e.target.parentElement.parentElement.remove();
-      checkUI();
-    }
+function addItemToStorage(content) {
+  let itemsFromStorage = getItemsFromStorage();
+
+  itemsFromStorage.push(content);
+
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+}
+
+function getItemsFromStorage() {
+  let itemsFromStorage;
+
+  if (localStorage.getItem("items") === null) {
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem("items"));
   }
+
+  return itemsFromStorage;
+}
+
+function onAddItemSubmit(value) {
+  addItemToDOM(value);
+  addItemToStorage(value);
+}
+
+function onClickItem(e) {
+  if (e.target.parentElement.classList.contains("remove-item")) {
+    deleteItem(e.target.parentElement.parentElement);
+  }
+}
+
+function deleteItem(item) {
+  if (confirm("Are You Sure?")) {
+    item.remove();
+
+    removeItemFromStorage(item.textContent);
+
+    checkUI();
+  }
+}
+
+function removeItemFromStorage(itemText) {
+  let itemsFromStorage = getItemsFromStorage();
+
+  itemsFromStorage = itemsFromStorage.filter((item) => item !== itemText);
+
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
 }
 
 function checkUI() {
@@ -65,30 +114,37 @@ function filterItems(e) {
   });
 }
 
-// Form Submit Event Listener
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
+function init() {
+  // Form Submit Event Listener
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-  if (input.value === "" || input.value === " ") {
-    alert("Please add an item... This can't be empty");
-  } else {
-    addItem(input.value);
-  }
-  input.value = "";
-});
+    if (input.value === "" || input.value === " ") {
+      alert("Please add an item... This can't be empty");
+    } else {
+      onAddItemSubmit(input.value);
+    }
+    input.value = "";
+  });
 
-// Delete Button & Clear Functionality logic
-itemList.addEventListener("click", (e) => deleteItem(e));
+  // Delete Button & Clear Functionality logic
+  itemList.addEventListener("click", (e) => onClickItem(e));
 
-clearBtn.addEventListener("click", () => {
-  while (itemList.firstChild) {
-    itemList.firstChild.remove();
-  }
+  clearBtn.addEventListener("click", () => {
+    while (itemList.firstChild) {
+      itemList.firstChild.remove();
+      removeItemFromStorage(itemList.firstChild.textContent);
+    }
+    checkUI();
+  });
+
+  // Item filtering functionality ==>
+  itemFilter.addEventListener("input", (e) => filterItems(e));
+
+  // On document load check for empty list
   checkUI();
-});
 
-// Item filtering functionality ==>
-itemFilter.addEventListener("input", (e) => filterItems(e));
+  document.addEventListener("DOMContentLoaded", displayItems);
+}
 
-// On document load check for empty list
-checkUI();
+init();
