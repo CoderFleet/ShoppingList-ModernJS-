@@ -6,6 +6,7 @@ const button = document.getElementsByClassName("btn");
 const itemList = document.querySelector("#item-list");
 const itemFilter = document.getElementById("filter");
 const clearBtn = document.getElementById("clear");
+let isEditMode = false;
 
 // Function to add items to shopping list
 
@@ -61,6 +62,18 @@ function getItemsFromStorage() {
 }
 
 function onAddItemSubmit(value) {
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector(".edit-mode");
+
+    removeItemFromStorage(itemToEdit.textContent);
+    itemToEdit.classList.remove("edit-mode");
+    itemToEdit.remove();
+    isEditMode = false;
+  } else if (checkIfItemExists(value)) {
+    alert("That item already exists...");
+    return;
+  }
+
   addItemToDOM(value);
   addItemToStorage(value);
 }
@@ -68,7 +81,29 @@ function onAddItemSubmit(value) {
 function onClickItem(e) {
   if (e.target.parentElement.classList.contains("remove-item")) {
     deleteItem(e.target.parentElement.parentElement);
+  } else {
+    setItemToEdit(e.target);
   }
+}
+
+function checkIfItemExists(item) {
+  const itemsFromStorage = getItemsFromStorage();
+
+  return itemsFromStorage.includes(item);
+}
+
+function setItemToEdit(item) {
+  isEditMode = true;
+
+  itemList
+    .querySelectorAll("li")
+    .forEach((i) => i.classList.remove("edit-mode"));
+
+  item.classList.add("edit-mode");
+
+  button[0].innerHTML = '<i class="fa-solid fa-pen"></i>  Update Item';
+  button[0].style.backgroundColor = "#228B22";
+  input.value = item.textContent;
 }
 
 function deleteItem(item) {
@@ -98,6 +133,11 @@ function checkUI() {
     clearBtn.style.display = "block";
     itemFilter.style.display = "block";
   }
+
+  button[0].innerHTML = '<i class="fa-solid fa-plus"></i> Add Item';
+  button[0].style.backgroundColor = "#000000";
+
+  isEditMode = false;
 }
 
 function filterItems(e) {
